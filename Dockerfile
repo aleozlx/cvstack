@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.0-devel-ubuntu16.04
+FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
 MAINTAINER Alex Yang <aleozlx@gmail.com>
 
 # System dependencies
@@ -8,7 +8,7 @@ RUN apt-get -y update && apt-get -y install build-essential gfortran libblas-dev
 RUN apt-get -y install python3-pip && pip3 install --upgrade pip
 RUN BLAS=/usr/lib/libblas/libblas.so LAPACK=/usr/lib/lapack/liblapack.so pip3 --no-cache-dir install numpy scipy
 
-# OpenCV3
+# OpenCV 3.3.0
 RUN apt-get -y install libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev
 RUN apt-get -y install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev
 RUN apt-get -y install cmake pkg-config libgtk-3-dev unzip
@@ -31,8 +31,43 @@ RUN mkdir /opt/opencv-3.3.0/build && cd /opt/opencv-3.3.0/build && cmake \
     -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -DCUDA_NVCC_FLAGS="-D_FORCE_INLINES" ..
 # ref: https://gist.github.com/filitchp/5645d5eebfefe374218fa2cbf89189aa
 # cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_CUDA=ON -D WITH_CUBLAS=ON -D WITH_TBB=ON -D WITH_V4L=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -DCUDA_NVCC_FLAGS="-D_FORCE_INLINES" ..
+RUN cd /opt/opencv-3.3.0/build && make -j8 && make install && ldconfig
 
-RUN cd /opt/opencv-3.3.0/build && make -j8
+# TensorFlow 1.4.0-rc1
+RUN apt-get -y install openjdk-8-jdk libcupti-dev python3-wheel curl
+RUN pip3 install six wheel
+RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list
+RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
+RUN apt-get -y update && apt-get -y install git bazel
+# RUN wget --quiet -O /opt/tensorflow.zip https://github.com/tensorflow/tensorflow/archive/v1.3.1.zip
+# RUN cd /opt && unzip tensorflow.zip
+RUN cd /opt && git clone https://github.com/tensorflow/tensorflow.git /opt/tensorflow-1.4.0-rc1
+RUN cd /opt/tensorflow-1.4.0-rc1 && git checkout v1.4.0-rc1
+ENV CI_BUILD_PYTHON=python3 \
+    LD_LIBRARY_PATH=/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH \
+    CUDNN_INSTALL_PATH=/usr/lib/x86_64-linux-gnu \
+    PYTHON_BIN_PATH=/usr/bin/python3 \
+    PYTHON_LIB_PATH=/usr/local/lib/python3.5/dist-packages \
+    TF_NEED_HDFS=1 \
+    TF_NEED_GCP=0 \
+    TF_NEED_CUDA=1 \
+    TF_CUDA_VERSION=9.0 \
+    TF_CUDNN_VERSION=7 \
+    TF_CUDA_COMPUTE_CAPABILITIES=3.0,3.5,5.2,6.0,6.1
+# ref: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/docker/Dockerfile.devel-gpu
+# ref: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/docker/Dockerfile.devel-gpu-cuda9-cudnn7
+RUN cd /opt/tensorflow-1.4.0-rc1 && ./configure
+RUN cd /opt/tensorflow-1.4.0-rc1 && ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
+    bazel build --config=opt --config=cuda \
+    --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0" \
+        tensorflow/tools/pip_package:build_pip_package && \
+    rm /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
+    bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip && \
+    pip --no-cache-dir install --upgrade /tmp/pip/tensorflow-*.whl && \
+    rm -rf /tmp/pip && \
+    rm -rf /root/.cache
+
 # Other Python packages
 # COPY requirements.txt /requirements.txt
 # RUN pip3 --no-cache-dir install -r /requirements.txt
