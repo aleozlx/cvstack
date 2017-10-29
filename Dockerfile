@@ -16,6 +16,7 @@ RUN wget --quiet -O /opt/opencv.zip https://github.com/opencv/opencv/archive/3.3
 RUN wget --quiet -O /opt/opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/3.3.0.zip
 RUN cd /opt && unzip opencv.zip && unzip opencv_contrib.zip
 COPY patches/FindCUDA-CUDA9.cmake /opt/opencv-3.3.0/cmake/FindCUDA.cmake
+# ref: https://stackoverflow.com/questions/46584000/cmake-error-variables-are-set-to-notfound
 COPY patches/OpenCVDetectCUDA-CUDA9.cmake /opt/opencv-3.3.0/cmake/OpenCVDetectCUDA.cmake
 COPY patches/cudev-common-cuda9.hpp /opt/opencv-3.3.0/modules/cudev/include/opencv2/cudev/common.hpp
 RUN mkdir /opt/opencv-3.3.0/build && cd /opt/opencv-3.3.0/build && cmake \
