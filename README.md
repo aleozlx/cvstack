@@ -19,3 +19,7 @@ OpenCV + TensorFlow container image [rolling release]
 ~~~
 nvidia-docker run -it -e DISPLAY --net=host -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "$HOME/.Xauthority:/home/developer/.Xauthority" aleozlx/cvstack
 ~~~
+
+## Quick test
+
+Run 'python example.py' from host and it should plot a sine wave and print system information.
