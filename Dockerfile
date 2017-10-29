@@ -90,4 +90,5 @@ ENV HOME /home/developer
 WORKDIR /home/developer/workspace
 CMD /bin/bash
 
-# nvidia-docker run -it -e DISPLAY --net=host -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "$HOME/.Xauthority:/home/developer/.Xauthority" cvstack
+# Example usage
+# nvidia-docker run -it -e DISPLAY --net=host -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "$HOME/.Xauthority:/home/developer/.Xauthority" aleozlx/cvstack
