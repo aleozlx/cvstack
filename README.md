@@ -14,7 +14,7 @@ OpenCV + TensorFlow container image [rolling release]
     * pandas matplotlib h5py scikit-learn scikit-image ...
     * Check out `requirements.txt` for complete list.
 
-# Example Usage
+## Example Usage
 
 ~~~
 nvidia-docker run -it -e DISPLAY --net=host -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "$HOME/.Xauthority:/home/developer/.Xauthority" aleozlx/cvstack
