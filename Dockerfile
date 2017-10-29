@@ -69,10 +69,25 @@ RUN cd /opt/tensorflow-1.4.0-rc1 && ln -s /usr/local/cuda/lib64/stubs/libcuda.so
     rm -rf /root/.cache
 
 # Other Python packages
-# COPY requirements.txt /requirements.txt
-# RUN pip3 --no-cache-dir install -r /requirements.txt
+COPY requirements.txt /requirements.txt
+RUN pip3 --no-cache-dir install -r /requirements.txt
+RUN apt -y install python3-tk
 
-# Create workespace
-# RUN mkdir -p /workspace "`python3 -m site --user-site`"
-WORKDIR /workspace
+# Enable non-root with sudo and GUI
+# ref: http://wiki.ros.org/docker/Tutorials/GUI
+# ref: http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/
+RUN apt -y install sudo
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/developer /home/developer/workspace "`python3 -m site --user-site`" && \
+    echo "developer:x:${uid}:${gid}:developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:${uid}:" >> /etc/group && \
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown ${uid}:${gid} -R /home/developer
+
+USER developer
+ENV HOME /home/developer
+WORKDIR /home/developer/workspace
 CMD /bin/bash
+
+# nvidia-docker run -it -e DISPLAY --net=host -v "/tmp/.X11-unix:/tmp/.X11-unix" -v "$HOME/.Xauthority:/home/developer/.Xauthority" cvstack
